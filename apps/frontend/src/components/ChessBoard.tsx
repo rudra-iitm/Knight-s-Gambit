@@ -3,10 +3,11 @@ import { MOVE } from '@/pages/Arena';
 import { Square, PieceSymbol, Color } from 'chess.js'
 import { useState } from 'react';
 
-const ChessBoard = ({ board, socket, chess, setBoard, color } : {
+const ChessBoard = ({ board, socket, chess, setBoard, color, gameId } : {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     chess: any,
     color: string,
+    gameId: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setBoard: any,
     board: ({
@@ -34,10 +35,13 @@ const ChessBoard = ({ board, socket, chess, setBoard, color } : {
                             try {
                             socket.send(JSON.stringify({
                                 type: MOVE,
-                                move: {
-                                    from: from,
-                                    to: sq
-                                }
+                                payload: {
+                                    gameId: gameId,
+                                    move: {
+                                        from: from,
+                                        to: sq
+                                    }
+                                },
                             }))
                             chess.move({from: from, to: sq})
                             setBoard(chess.board())

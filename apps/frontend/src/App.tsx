@@ -12,7 +12,7 @@ function App() {
       <Routes>
         <Route path='/' element={<Homepage />} />
         <Route path='/auth' element={<Auth />} />
-        <Route path='/arena' element={<Arena />} />
+        <Route path='/arena/:gameId' element={<Arena />} />
       </Routes>
     </BrowserRouter>
     </>

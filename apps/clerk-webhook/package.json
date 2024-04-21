@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon --exec ts-node src/index.ts"
+    "dev": "nodemon --exec ts-node src/index.ts "
   },
   "keywords": [],
   "author": "",
@@ -14,7 +14,6 @@
     "@types/express": "^4.17.21",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "micro": "^10.0.1",
     "svix": "^1.21.0"
   },
   "devDependencies": {

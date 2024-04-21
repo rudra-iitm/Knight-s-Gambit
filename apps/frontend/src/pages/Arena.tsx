@@ -5,70 +5,135 @@ import { SVGProps, useEffect, useState } from "react"
 import { JSX } from "react/jsx-runtime"
 import ChessBoard from "@/components/ChessBoard"
 import { useSocket } from "@/hooks/useSocket"
-import {Chess, DEFAULT_POSITION} from 'chess.js';
+import {Chess, Square} from 'chess.js';
 import { Loader, Loader2 } from "@/components/Loader"
+import { useUser } from "@clerk/clerk-react"
+import { useNavigate, useParams, usegameId } from "react-router-dom"
 
-export const INIT_GAME = 'init_game';
-export const MOVE = 'move';
-export const GAME_OVER = 'game_over';
-export const GAME_STARTED = 'game_started';
+export const INIT_GAME = "init_game";
+export const MOVE = "move";
+export const OPPONENT_DISCONNECTED = "opponent_disconnected";
+export const GAME_OVER = "game_over";
+export const JOIN_ROOM = "join_room";
+export const GAME_JOINED = "game_joined"
+export const GAME_ALERT = "game_alert"
+export const GAME_ADDED = "game_added"
+export const GAME_STARTED = "game_started"
+
+export interface IMove {
+  from: Square; to: Square
+}
+
+interface Metadata {
+  blackPlayer: { id: string, name: string };
+  whitePlayer: {id: string, name: string };
+}
 
 export default function Arena() {
 
   const socket = useSocket();
+  const { gameId } = useParams();
+  const navigate = useNavigate();
+  const { isSignedIn, user, isLoaded } = useUser();
   const [chess, setChess] = useState(new Chess());
   const [board, setBoard] = useState(chess.board());
-  const [active, setActive] = useState(false);
   const [color, setColor] = useState('white');
   const [matching, setMatching] = useState(false);
+  const [started, setStarted] = useState(false)
+  const [gameMetadata, setGameMetadata] = useState<Metadata | null>(null)
+  const [result, setResult] = useState<"WHITE_WINS" | "BLACK_WINS" | "DRAW" | typeof OPPONENT_DISCONNECTED | null>(null);
+  const [moves, setMoves] = useState<IMove[]>([]);
+  const [added, setAdded] = useState(false);
+  const [gameID, setGameID] = useState('');
 
   useEffect(() => {
+  console.log('GAME', gameId)
+
     if (!socket) {
       return;
     }
-
-    console.log('socket', socket);
 
     socket.onmessage = (event) => {
       const message = JSON.parse(event.data);
       console.log('message', message);
       switch (message.type) {
+        case GAME_ADDED:
+          setAdded(true);
+          break;
         case INIT_GAME:
-          setMatching(true);
+          // eslint-disable-next-line no-case-declarations
+          setBoard(chess.board());
+          setStarted(true);
+          navigate(`/arena/${message.payload.gameId}`)
+          console.log('move', message.payload);
+          setGameMetadata({
+            blackPlayer: message.payload.blackPlayer,
+            whitePlayer: message.payload.whitePlayer
+        })
           break;
         case MOVE:
           // eslint-disable-next-line no-case-declarations
           const move = message.payload;
-          chess.move(move);
+          console.log('move', move);
+          // eslint-disable-next-line no-case-declarations
+          const moves = chess.moves({verbose: true});
+          if (moves.map(x => JSON.stringify(x)).includes(JSON.stringify(move))) return;
+          try {
+            chess.move(move);
+          } catch (error) {
+            console.log(error);
+            return;
+          }
+          console.log('moved successfully');
           setBoard(chess.board());
-          console.log('move', message.payload);
+            setMoves(moves => [...moves, move])
           break;
         case GAME_OVER:
-          console.log('game_over', message.payload);
+          setResult(message.payload.result);
           break;
-        case GAME_STARTED:
-          setChess(new Chess(DEFAULT_POSITION));
-          setBoard(chess.board());
-          setActive(true)
-          setColor(message.payload.color);
-          console.log('game_started', message.payload);
+        case OPPONENT_DISCONNECTED:
+          setResult(OPPONENT_DISCONNECTED);
+          break;
+        case GAME_JOINED:
+          setGameMetadata({
+            blackPlayer: message.payload.blackPlayer,
+            whitePlayer: message.payload.whitePlayer
+          })
+          setStarted(true);
+          setMoves(message.payload.moves);
+          message.payload.moves.map(move => chess.move(move))
           break;
         default:
+          alert(message.payload.message)
           break;
       }
     }
 
+    if (gameId !== "random") {
+      socket.send(JSON.stringify({
+          type: JOIN_ROOM, 
+          payload: {
+              gameId
+          }
+      }))
+  }
+
     return () => {
       socket.onmessage = null;
     }
-  }, [socket]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket, chess]);
 
-  if (!socket) {
+  if (!socket || !isLoaded) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader size={16}/>
       </div>
     )
+  }
+
+  if (!isSignedIn) {
+    navigate('/');
   }
 
   return (
@@ -84,7 +149,7 @@ export default function Arena() {
               </Avatar>
               <div className="truncate flex justify-between gap-16 items-center">
                 <div>
-                    <h3 className="text-lg font-semibold">John Doe</h3>
+                    <h3 className="text-lg font-semibold">{gameMetadata?.whitePlayer.name}</h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">2450 ELO</p>
                 </div>
                 <div>
@@ -101,7 +166,7 @@ export default function Arena() {
                 <AvatarFallback>GM</AvatarFallback>
               </Avatar>
               <div className="truncate">
-                <h3 className="text-lg font-semibold">Grandmaster</h3>
+                <h3 className="text-lg font-semibold">{gameMetadata?.blackPlayer.name}</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">2600 ELO</p>
               </div>
             </div>
@@ -123,13 +188,13 @@ export default function Arena() {
           </div>
         </div>
         <div>
-            {!active && <Button className="w-full" disabled={matching} onClick={
+            {!started && gameId == 'random' && <Button className="w-full" onClick={
               () => {
                 socket.send(JSON.stringify({
                   type: INIT_GAME,
                 })
                 )
-                setMatching(!matching);
+                setStarted(!started);
               }
             }>
                 {matching ? <div className="flex justify-center items-center gap-4">
@@ -202,7 +267,7 @@ export default function Arena() {
       </div>
       <div className="flex items-center justify-center bg-gray-100 p-6 dark:bg-gray-950">
         <div className="h-[750px] w-[750px] rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900" >
-             <ChessBoard color={color} chess={chess} setBoard={setBoard} socket={socket} board={board} />
+             <ChessBoard gameId={gameId || ''} color={color} chess={chess} setBoard={setBoard} socket={socket} board={board} />
         </div>
       </div>
     </div>
