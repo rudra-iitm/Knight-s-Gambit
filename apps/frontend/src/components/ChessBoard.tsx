@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { IMove, MOVE } from '@/pages/Arena';
 import { Square, PieceSymbol, Color } from 'chess.js'
 import { useState } from 'react';
 
-const ChessBoard = ({ board, socket, chess, setBoard, color, gameId, moves } : {
+const ChessBoard = ({ board, socket, chess, setBoard, color, gameId } : {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     chess: any,
     color: string,
@@ -20,13 +21,11 @@ const ChessBoard = ({ board, socket, chess, setBoard, color, gameId, moves } : {
     }) => {
 
     const [from, setFrom] = useState<Square | null>(null)
-    const [lastMoveFrom, lastMoveTo] = [moves.at(-1)?.from, moves.at(-1)?.to];
     const isMyTurn = chess.turn() == color;
     const isFlipped = color == 'b';
-    const [legalMoves, setLegalMoves] = useState<string[]>([])
-    const labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-    const [gameOver, setGameOver] = useState(false)
-
+    const [_legalMoves, setLegalMoves] = useState<string[]>([])
+    // const _labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+    const [gameOver, _setGameOver] = useState(false)
 
   return (
     <>
@@ -38,9 +37,9 @@ const ChessBoard = ({ board, socket, chess, setBoard, color, gameId, moves } : {
             <div key={i} className='flex grid-cols-8'>
             {(isFlipped ? row.slice().reverse() : row).map((square, j) => {
                 j = isFlipped ? 7 - (j % 8) : j % 8;
-                const isMainBoxColor = isFlipped
-                    ? (i + j) % 2 === 0
-                    : (i + j) % 2 !== 0;
+                // const isMainBoxColor = isFlipped
+                //     ? (i + j) % 2 === 0
+                //     : (i + j) % 2 !== 0;
                   const squareRepresentation = (String.fromCharCode(97 + j) +
                     '' +
                     i) as Square;

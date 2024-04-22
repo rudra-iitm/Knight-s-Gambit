@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { AvatarImage, AvatarFallback, Avatar } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -36,16 +37,15 @@ export default function Arena() {
   const navigate = useNavigate();
   const { isSignedIn, user, isLoaded } = useUser();
   console.log('userId', user?.id)
-  const [chess, setChess] = useState(new Chess());
+  const [chess, _setChess] = useState(new Chess());
   const [board, setBoard] = useState(chess.board());
-  const [color, setColor] = useState('w');
-  const [matching, setMatching] = useState(false);
+  const [_color, _setColor] = useState('w');
+  const [matching, _setMatching] = useState(false);
   const [started, setStarted] = useState(false)
   const [gameMetadata, setGameMetadata] = useState<Metadata | null>(null)
-  const [result, setResult] = useState<"WHITE_WINS" | "BLACK_WINS" | "DRAW" | typeof OPPONENT_DISCONNECTED | null>(null);
+  const [_result, setResult] = useState<"WHITE_WINS" | "BLACK_WINS" | "DRAW" | typeof OPPONENT_DISCONNECTED | null>(null);
   const [moves, setMoves] = useState<IMove[]>([]);
-  const [added, setAdded] = useState(false);
-  const [gameID, setGameID] = useState('');
+  const [_added, setAdded] = useState(false);
   console.log(gameMetadata)
 
   useEffect(() => {
@@ -103,7 +103,8 @@ export default function Arena() {
           })
           setStarted(true);
           setMoves(message.payload.moves);
-          message.payload.moves.map(move => chess.move(move))
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          message.payload.moves.map((move: any) => chess.move(move))
           break;
         default:
           alert(message.payload.message)
