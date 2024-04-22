@@ -1,9 +1,9 @@
 
-import { MOVE } from '@/pages/Arena';
+import { IMove, MOVE } from '@/pages/Arena';
 import { Square, PieceSymbol, Color } from 'chess.js'
 import { useState } from 'react';
 
-const ChessBoard = ({ board, socket, chess, setBoard, color, gameId } : {
+const ChessBoard = ({ board, socket, chess, setBoard, color, gameId, moves } : {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     chess: any,
     color: string,
@@ -16,34 +16,69 @@ const ChessBoard = ({ board, socket, chess, setBoard, color, gameId } : {
         color: Color;
     } | null)[][],
     socket: WebSocket
+    moves: IMove[]
     }) => {
 
     const [from, setFrom] = useState<Square | null>(null)
+    const [lastMoveFrom, lastMoveTo] = [moves.at(-1)?.from, moves.at(-1)?.to];
+    const isMyTurn = chess.turn() == color;
+    const isFlipped = color == 'b';
+    const [legalMoves, setLegalMoves] = useState<string[]>([])
+    const labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+    const [gameOver, setGameOver] = useState(false)
+
+
   return (
+    <>
+    {gameOver && <div className='absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center'>Game Over</div>}
     <div className={`w-full h-full grid grid-rows-8 ${color == 'black' ? 'rotate-180': ''}`}>
-        {board.map((row, i) => (
+        {(isFlipped ? board.slice().reverse() : board).map((row, i) => {
+            i = isFlipped ? i + 1 : 8 - i;
+            return (
             <div key={i} className='flex grid-cols-8'>
-            {row.map((square, j) => {
-                const sq = String.fromCharCode(96 + (j%8) + 1) + "" + (8 - i) as Square;
+            {(isFlipped ? row.slice().reverse() : row).map((square, j) => {
+                j = isFlipped ? 7 - (j % 8) : j % 8;
+                const isMainBoxColor = isFlipped
+                    ? (i + j) % 2 === 0
+                    : (i + j) % 2 !== 0;
+                  const squareRepresentation = (String.fromCharCode(97 + j) +
+                    '' +
+                    i) as Square;
 
                 return (
                   <div key={j} onClick={
                       () => {
+                        if (!isMyTurn) return;
+                        if (from === squareRepresentation) {
+                            setFrom(null);
+                          }
                          if (!from) {
-                          setFrom(() => square?.square ?? null)
+                          setFrom(() => squareRepresentation)
+                          setLegalMoves(
+                            chess
+                              .moves({ verbose: true, square: square?.square })
+                              .map((move: any) => move.to),
+                          );
                          } else {
+                            // let moveResult;
                             try {
-                            socket.send(JSON.stringify({
+                                // moveResult = chess.move({
+                                //     from: from,
+                                //     to: squareRepresentation,
+                                // });
+                                socket.send(JSON.stringify({
                                 type: MOVE,
                                 payload: {
                                     gameId: gameId,
                                     move: {
                                         from: from,
-                                        to: sq
+                                        to: squareRepresentation
                                     }
                                 },
                             }))
-                            chess.move({from: from, to: sq})
+                            chess.move({from: from, to: squareRepresentation})
+                            setFrom(null);
+                            setLegalMoves([]);
                             setBoard(chess.board())
                             setFrom(null)
                         } catch (error) {
@@ -60,8 +95,10 @@ const ChessBoard = ({ board, socket, chess, setBoard, color, gameId } : {
                 );
             })}
             </div>
-        ))}
+            );
+        })}
     </div>
+    </>
   ) 
 }
 

@@ -1,5 +1,5 @@
 import { WebSocket } from "ws";
-import { GAME_ALERT, GAME_JOINED, GAME_NOT_FOUND, GAME_STARTED, INIT_GAME, JOIN_ROOM, MOVE } from "./messages";
+import { GAME_ADDED, GAME_ALERT, GAME_JOINED, GAME_NOT_FOUND, GAME_STARTED, INIT_GAME, JOIN_ROOM, MOVE } from "./messages";
 import { Game } from "./Game";
 import { SocketManager, User } from "./SocketManager";
 import { db } from "./db";
@@ -35,7 +35,7 @@ export class GameManager {
             const message = JSON.parse(data.toString());
             if (message.type === INIT_GAME) {
                 if (this.pendingGameId) {
-                    const game = this.games.find(x => x.gameId === this.pendingGameId)
+                    const game = this.games.find(game => game.gameId === this.pendingGameId)
                     console.log('Games', this.games);
                     console.log('Pending game found', game);
                     if (!game) {
@@ -56,23 +56,34 @@ export class GameManager {
                     }            
                     SocketManager.getInstance().addUser(user, game.gameId)
                     await game?.updateSecondPlayer(user.userId);
+                    console.log('Game started', game);
                     this.pendingGameId = null;
                 }
                 else {
                     const game = new Game(user.userId, null)
                     this.games.push(game);
+                    console.log('Game created', this.games);
                     this.pendingGameId = game.gameId;
                     console.log('Game created', game.gameId);
                     SocketManager.getInstance().addUser(user, game.gameId)
+                    SocketManager.getInstance().broadcast(
+                        game.gameId,
+                        JSON.stringify({
+                          type: GAME_ADDED,
+                        }),
+                      );
                 }
             }
             if (message.type === MOVE) {
                 console.log('Move received', message.payload.move);
                 const gameId = message.payload.gameId;
-                const game = this.games.find(game => game.gameId == gameId);
-                console.log('All games', this.games);
                 console.log('Game ID', gameId);
-                console.log('Game found', game);
+                console.log('All games', this.games);
+                const game = this.games.find((game) => game.gameId == gameId);
+                console.log('Game Found after move', game);
+                // console.log('All games', this.games);
+                // console.log('Game ID', gameId);
+                // console.log('Game found', game);
                 if (game) {
                     game.makeMove(user, message.payload.move);
                 }

@@ -8,7 +8,7 @@ import { useSocket } from "@/hooks/useSocket"
 import {Chess, Square} from 'chess.js';
 import { Loader, Loader2 } from "@/components/Loader"
 import { useUser } from "@clerk/clerk-react"
-import { useNavigate, useParams, usegameId } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 
 export const INIT_GAME = "init_game";
 export const MOVE = "move";
@@ -35,9 +35,10 @@ export default function Arena() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { isSignedIn, user, isLoaded } = useUser();
+  console.log('userId', user?.id)
   const [chess, setChess] = useState(new Chess());
   const [board, setBoard] = useState(chess.board());
-  const [color, setColor] = useState('white');
+  const [color, setColor] = useState('w');
   const [matching, setMatching] = useState(false);
   const [started, setStarted] = useState(false)
   const [gameMetadata, setGameMetadata] = useState<Metadata | null>(null)
@@ -45,6 +46,7 @@ export default function Arena() {
   const [moves, setMoves] = useState<IMove[]>([]);
   const [added, setAdded] = useState(false);
   const [gameID, setGameID] = useState('');
+  console.log(gameMetadata)
 
   useEffect(() => {
   console.log('GAME', gameId)
@@ -145,12 +147,11 @@ export default function Arena() {
             <div className="flex items-center gap-4">
               <Avatar>
                 <AvatarImage src="/placeholder-user.jpg" />
-                <AvatarFallback>JD</AvatarFallback>
+                <AvatarFallback>{gameMetadata?.whitePlayer.name[0].toUpperCase()}</AvatarFallback>
               </Avatar>
               <div className="truncate flex justify-between gap-16 items-center">
                 <div>
                     <h3 className="text-lg font-semibold">{gameMetadata?.whitePlayer.name}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">2450 ELO</p>
                 </div>
                 <div>
                 <Button size="icon" variant={'outline'}>
@@ -163,15 +164,25 @@ export default function Arena() {
             <div className="flex items-center gap-4">
               <Avatar>
                 <AvatarImage src="/placeholder-user.jpg" />
-                <AvatarFallback>GM</AvatarFallback>
+                <AvatarFallback>{gameMetadata?.blackPlayer.name[0].toUpperCase()}</AvatarFallback>
               </Avatar>
               <div className="truncate">
                 <h3 className="text-lg font-semibold">{gameMetadata?.blackPlayer.name}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">2600 ELO</p>
               </div>
             </div>
             </div>
           </div>
+          {started && (
+        <div className={`flex font-semibold items-center justify-center rounded-lg  p-3 ${(user?.id === gameMetadata?.blackPlayer?.id ? 'b' : 'w') ===
+        chess.turn()
+          ? 'bg-green-500'
+          : "bg-red-500"}`}>
+          {(user?.id === gameMetadata?.blackPlayer?.id ? 'b' : 'w') ===
+          chess.turn()
+            ? 'Your turn'
+            : "Opponent's turn"}
+        </div>
+      )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Wins</p>
@@ -267,7 +278,9 @@ export default function Arena() {
       </div>
       <div className="flex items-center justify-center bg-gray-100 p-6 dark:bg-gray-950">
         <div className="h-[750px] w-[750px] rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900" >
-             <ChessBoard gameId={gameId || ''} color={color} chess={chess} setBoard={setBoard} socket={socket} board={board} />
+             <ChessBoard moves={moves} gameId={gameId || ''} color={
+                          user?.id === gameMetadata?.blackPlayer?.id ? 'b' : 'w'
+                        } chess={chess} setBoard={setBoard} socket={socket} board={board} />
         </div>
       </div>
     </div>

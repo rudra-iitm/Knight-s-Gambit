@@ -33,6 +33,8 @@ export class Game {
             }
         });
 
+        // console.log('Users', users);
+
         try {
             await this.createGameInDB();
         } catch(err) {
