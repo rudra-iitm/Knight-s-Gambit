@@ -3,6 +3,7 @@ import { Webhook } from "svix";
 import bodyParser from "body-parser";
 import dotenv from "dotenv";
 import client from "@repo/db/client";
+import ngrok from "@ngrok/ngrok";
 
 dotenv.config();
 
@@ -82,4 +83,22 @@ app.get("/", (req, res) => {
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
+});
+
+(async function () {
+	const listener = await ngrok.forward({
+		addr: port,
+		authtoken: process.env.NGROK_AUTH_TOKEN,
+		domain: process.env.NGROK_DOMAIN,
+	});
+
+	console.log(`Ingress established at: ${listener.url()}`);
+})();
+
+// Gracefully kill node server
+process.on('SIGINT', function() {
+  console.log( "\nGracefully shutting down from SIGINT (Ctrl-C)" );
+  // some other closing procedures go here
+  ngrok.disconnect();
+  process.exit(0);
 });
