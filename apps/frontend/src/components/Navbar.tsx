@@ -1,4 +1,4 @@
-import  { useState } from "react";
+import  { useEffect, useState } from "react";
 import { HoveredLink, Menu, MenuItem } from "./ui/navbar-menu";
 import { cn } from "@/utils/cn";
 import {  SignInButton, SignOutButton, SignUpButton, SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
@@ -12,6 +12,23 @@ export function Navbar() {
 }
 
 function NavbarFnc({ className }: { className?: string }) {
+  const [windowSize, setWindowSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
+  useEffect(()=>{
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    }
+  },[]);
+  
   const [active, setActive] = useState<string | null>(null);
   return (
     <div
@@ -20,7 +37,7 @@ function NavbarFnc({ className }: { className?: string }) {
       <Menu setActive={setActive}>
         <MenuItem setActive={setActive} active={active} item="Play Game">
           <div className="flex flex-col space-y-4 text-sm">
-            <HoveredLink href="/web-dev">Against Bot</HoveredLink>
+            <HoveredLink href="/arena/bot">Against Bot</HoveredLink>
             <HoveredLink href="/interface-design">Multi Player</HoveredLink>
             <HoveredLink href="/seo">Create Room</HoveredLink>
             <HoveredLink href="/branding">Join Room</HoveredLink>
@@ -46,7 +63,7 @@ function NavbarFnc({ className }: { className?: string }) {
         </button>
         </SignUpButton>
         <SignedIn>
-            <UserButton afterSignOutUrl='/sign-in' />
+            <UserButton afterSignOutUrl='/' />
         </SignedIn>
       </Menu>
     </div>
