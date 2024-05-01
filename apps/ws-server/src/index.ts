@@ -12,6 +12,10 @@ const httpServer = app.listen(port,  () => {
     console.log(`Server is running on http://localhost:${port}`)
 })
 
+app.get('/health', (req, res) => {
+    res.send('Health OK!')
+})
+
 const wss = new WebSocketServer({ server: httpServer });
 
 let gameManager = new GameManager();
