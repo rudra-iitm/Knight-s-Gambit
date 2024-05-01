@@ -29,3 +29,6 @@ wss.on('connection', function connection(ws, req) {
         gameManager.removeUser(ws);
     });
 });
+
+export {wss, app}
+export default app
