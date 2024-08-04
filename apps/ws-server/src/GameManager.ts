@@ -116,7 +116,7 @@ export class GameManager {
 
                 if (!availableGame) {
                     const game = new Game(gameFromDB?.whitePlayerId!, gameFromDB?.blackPlayerId!)
-                    gameFromDB?.moves.map((move) => game.board.move(move))
+                    gameFromDB?.moves.map((move: string | { from: string; to: string; promotion?: string; }) => game.board.move(move))
                     this.games.push(game);
                 }
                 user.socket.send(JSON.stringify({

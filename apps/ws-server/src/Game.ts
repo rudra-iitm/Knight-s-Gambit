@@ -46,8 +46,8 @@ export class Game {
             type: INIT_GAME,
             payload: {
                 gameId: this.gameId,
-                whitePlayer: { name: users.find(u => u.id === this.player1UserId)?.firstname, id: this.player1UserId },
-                blackPlayer: { name: users.find(u => u.id === this.player2UserId)?.firstname, id: this.player2UserId },
+                whitePlayer: { name: users.find((u: { id: string; }) => u.id === this.player1UserId)?.firstname, id: this.player1UserId },
+                blackPlayer: { name: users.find((u: { id: string | null; }) => u.id === this.player2UserId)?.firstname, id: this.player2UserId },
                 fen: this.board.fen(),
                 moves: []
             }
